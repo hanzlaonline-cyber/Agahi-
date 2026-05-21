@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // News collection
+    match /news/{newsId} {
+      allow read: if true; // News is public
+      allow create, update: if isAdmin() && isValidNews(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    function isValidNews(data) {
+      return data.keys().hasAll(['title', 'url', 'source', 'country', 'publishedAt', 'type'])
+        && data.title is string && data.title.size() <= 500
+        && data.url is string && data.url.size() <= 1000
+        && data.source is string
+        && data.country is string
+        && data.publishedAt is timestamp
+        && data.type in ['article', 'video'];
+    }
+
+    // Sync states
+    match /syncStates/{stateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // User profile/admins
+    match /admins/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false; // Only manageable via console
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(request.resource.data);
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(request.resource.data) && (
+        request.resource.data.isAdmin == resource.data.isAdmin 
+        && request.resource.data.createdAt == resource.data.createdAt
+      );
+      allow delete: if false;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'isAdmin', 'createdAt'])
+        && data.email is string && data.email.size() <= 256
+        && data.isAdmin == false
+        && data.createdAt == request.time
+        && (!data.keys().contains('displayName') || (data.displayName is string && data.displayName.size() <= 100) || data.displayName == null)
+        && (!data.keys().contains('photoURL') || (data.photoURL is string && data.photoURL.size() <= 1000) || data.photoURL == null);
+    }
+
+    // Verifications
+    match /verifications/{id} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidVerification(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    function isValidVerification(data) {
+      return data.keys().hasAll(['userId', 'query', 'type', 'result', 'createdAt'])
+        && data.userId == request.auth.uid
+        && data.query is string && data.query.size() <= 5000
+        && data.type in ['text', 'url', 'image']
+        && data.createdAt == request.time;
+    }
+  }
+}

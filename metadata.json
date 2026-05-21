@@ -1,0 +1,11 @@
+{
+  "name": "Agaahi - AI News Verification System",
+  "description": "An AI-powered news dashboard and fact-checking tool to verify authenticity across text, URLs, and images using Gemini AI.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

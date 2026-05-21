@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "news": {
+      "title": "News",
+      "description": "A news article or video saved in the system",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "url": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "source": { "type": "string" },
+        "country": { "type": "string" },
+        "channel": { "type": "string" },
+        "publishedAt": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["article", "video"] },
+        "verified": { "type": "boolean" },
+        "aiSummary": { "type": "string" }
+      },
+      "required": ["title", "url", "source", "country", "publishedAt", "type"]
+    },
+    "syncStates": {
+      "title": "Sync State",
+      "description": "Tracking the last sync time for countries/channels",
+      "type": "object",
+      "properties": {
+        "lastSync": { "type": "string", "format": "date-time" },
+        "country": { "type": "string" },
+        "channel": { "type": "string" }
+      },
+      "required": ["lastSync", "country"]
+    },
+    "verifications": {
+      "title": "Verification",
+      "description": "A manual verification performed by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "query": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "url", "image"] },
+        "result": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "query", "type", "result", "createdAt"]
+    },
+    "users": {
+      "title": "User Profile",
+      "description": "User profile storing display name, photo URL, and credentials securely",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "isAdmin", "createdAt"]
+    }
+  },
+  "firestore": {
+    "news": {
+      "schema": "news",
+      "description": "The collection of news items"
+    },
+    "syncStates": {
+      "schema": "syncStates",
+      "description": "Tracking when we last fetched news for specific targets"
+    },
+    "verifications": {
+      "schema": "verifications",
+      "description": "Manual verification history for users"
+    },
+    "users/{userId}": {
+      "schema": "users",
+      "description": "User account documents containing user metadata"
+    }
+  }
+}
